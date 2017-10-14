@@ -1,0 +1,46 @@
+{
+  "presets": [
+    ["env", { "modules": false }],
+    "react",
+    "flow"
+  ],
+  "plugins": [
+    "transform-class-properties",
+    "transform-object-rest-spread"
+  ],
+  "env": {
+    "test": {
+      "plugins": [
+        "transform-class-properties",
+        "transform-object-rest-spread",
+        "transform-es2015-modules-commonjs",
+        "babel-jest-assertions"
+      ]
+    },
+    "production": {
+      "plugins": [
+        "transform-class-properties",
+        "transform-object-rest-spread",
+        "transform-es2015-modules-commonjs",
+      ]
+    },
+    "lib": {
+      "presets": [
+        "env",
+        "react",
+        "flow"
+      ],
+      "plugins": [
+        "transform-class-properties",
+        "transform-object-rest-spread",
+        "transform-es2015-modules-commonjs",
+      ]
+    },
+    "es": {
+      "plugins": [
+        "transform-object-rest-spread",
+        "transform-class-properties",
+      ]
+    }
+  }
+}
