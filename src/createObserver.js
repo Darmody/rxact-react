@@ -70,6 +70,8 @@ const createObserver: CreateObserver = (state$) => {
               }
             }
           })
+
+          this.initialSubscriptions()
         }
 
         subscription = null
@@ -84,7 +86,22 @@ const createObserver: CreateObserver = (state$) => {
 
         component = null
 
-        componentWillMount() {
+        componentWillUnmount() {
+          if (this.subscription && typeof this.subscription.unsubscribe === 'function') {
+            this.subscription.unsubscribe()
+            this.subscription = null
+          }
+        }
+
+        componentWillReceiveProps(nextProps) {
+          this.setProps(nextProps)
+        }
+
+        shouldComponentUpdate() {
+          return false
+        }
+
+        initialSubscriptions = () => {
           let stream$ = state$
 
           const vdom$ = new Observable(observer => {
@@ -134,23 +151,11 @@ const createObserver: CreateObserver = (state$) => {
 
           this.subscription = vdom$.subscribe(component => {
             this.component = component
-            this.forceUpdate()
+
+            if (this.subscription) {
+              this.forceUpdate()
+            }
           })
-        }
-
-        componentWillUnmount() {
-          if (this.subscription && typeof this.subscription.unsubscribe === 'function') {
-            this.subscription.unsubscribe()
-            this.subscription = null
-          }
-        }
-
-        componentWillReceiveProps(nextProps) {
-          this.setProps(nextProps)
-        }
-
-        shouldComponentUpdate() {
-          return false
         }
 
         render() {
