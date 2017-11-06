@@ -6,11 +6,9 @@ import {
   isObservable
 } from 'rxact'
 import type { ComponentType } from 'react'
-import type {
-  ISubscription,
-  IESObservable,
-} from 'rxact/lib/observable'
+import type { IESObservable } from 'rxact/lib/observable'
 import noop from './utils/noop'
+import isFunction from './utils/isFunction'
 
 export type MapStateToProps = (stateProps: any, ownProps: {}) => any
 export type MergeProps = (stateProps: any, ownProps: {}) => any
@@ -26,7 +24,6 @@ type Decorator = (
 ) => (WrappedComponent: ComponentType<any>) => ComponentType<any>
 
 type CreateObserver = (state$: IESObservable) => {
-  subscription: ISubscription,
   decorator: Decorator,
 }
 
@@ -50,7 +47,6 @@ const createObserver: CreateObserver = (state$) => {
     throw new Error('Expect state$ to be instance of Observable')
   }
 
-  let streamSubscription = { unsubscribe: () => {} }
   const decorator = (mapStateToProps, mergeProps = defaultMergeProps) =>
     (WrappedComponent) => {
       class Observer extends Component<Props, State> {
@@ -75,6 +71,8 @@ const createObserver: CreateObserver = (state$) => {
         }
 
         subscription = null
+        streamSubscription = null
+        propSubscription = null
 
         setProps = noop
 
@@ -87,9 +85,18 @@ const createObserver: CreateObserver = (state$) => {
         component = null
 
         componentWillUnmount() {
-          if (this.subscription && typeof this.subscription.unsubscribe === 'function') {
-            this.subscription.unsubscribe()
+          if (this.subscription) {
             this.subscription = null
+          }
+
+          const streamSub = this.streamSubscription
+          if (streamSub && isFunction(streamSub.unsubscribe)) {
+            streamSub.unsubscribe()
+          }
+
+          const propSub = this.propSubscription
+          if (propSub && isFunction(propSub.unsubscribe)) {
+            propSub.unsubscribe()
           }
         }
 
@@ -130,22 +137,19 @@ const createObserver: CreateObserver = (state$) => {
               }
             }
 
-            const propSubscription = this.props$.subscribe((state) => {
+            this.propSubscription = this.props$.subscribe((state) => {
               propState = state
               onSubscribe()
 
             })
-            streamSubscription = stream$.subscribe((state) => {
+            this.streamSubscription = stream$.subscribe((state) => {
 
               streamState = state
               onSubscribe()
             })
 
             return {
-              unsubscribe: () => {
-                streamSubscription.unsubscribe()
-                propSubscription.unsubscribe()
-              }
+              unsubscribe: () => {}
             }
           })
 
@@ -168,7 +172,6 @@ const createObserver: CreateObserver = (state$) => {
 
   return {
     decorator,
-    subscription: streamSubscription,
   }
 }
 
